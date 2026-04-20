@@ -54,7 +54,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend/my-app
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
