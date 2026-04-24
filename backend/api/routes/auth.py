@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from db.database import get_db
 from db.models import AuthProvider, User
-from api.middleware.auth import TokenPayload, get_current_user
+from api.middleware.__init__ import TokenPayload, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -45,9 +45,6 @@ class AuthResponse(BaseModel):
 class MeResponse(BaseModel):
     user_id: str
     email: str
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _create_access_token(user_id: str, email: str) -> str:
     expire = datetime.utcnow() + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)

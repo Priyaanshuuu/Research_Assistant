@@ -1,12 +1,11 @@
-# REPLACE THIS FUNCTION — add router import and include_router call
-
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 import sys
 
 from core.config import settings
-from api.routes.auth import router as auth_router   # ← ADD
+from api.routes.auth import router as auth_router
 
 # ── Loguru configuration ────────────────────────────────────────────────────
 logger.remove()
@@ -18,6 +17,16 @@ logger.add(
     serialize=False,
 )
 
+# ── Lifespan Events ─────────────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Research Assistant API starting — env={}", settings.APP_ENV)
+    yield
+    # Shutdown
+    logger.info("Research Assistant API shutting down")
+
+
 # ── Application ─────────────────────────────────────────────────────────────
 app = FastAPI(
     title="Research Assistant API",
@@ -25,6 +34,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,  # ← ADD THIS
 )
 
 app.add_middleware(
@@ -36,19 +46,7 @@ app.add_middleware(
 )
 
 # ── Routers ──────────────────────────────────────────────────────────────────
-app.include_router(auth_router)                     # ← ADD
-
-
-# ── Lifecycle ────────────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup() -> None:
-    logger.info("Research Assistant API starting — env={}", settings.APP_ENV)
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    logger.info("Research Assistant API shutting down")
-
+app.include_router(auth_router)
 
 # ── Routes ───────────────────────────────────────────────────────────────────
 @app.get("/health", tags=["meta"])

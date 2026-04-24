@@ -17,9 +17,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # ── Enums ─────────────────────────────────────────────────────────────
-    op.execute("CREATE TYPE authprovider AS ENUM ('email', 'google')")
-    op.execute("CREATE TYPE researchstatus AS ENUM ('pending', 'running', 'completed', 'failed')")
-    op.execute("CREATE TYPE messagerole AS ENUM ('user', 'assistant', 'system')")
+    op.execute("CREATE TYPE IF NOT EXISTS authprovider AS ENUM ('email', 'google')")
+    op.execute("CREATE TYPE IF NOT EXISTS researchstatus AS ENUM ('pending', 'running', 'completed', 'failed')")
+    op.execute("CREATE TYPE IF NOT EXISTS messagerole AS ENUM ('user', 'assistant', 'system')")
 
     # ── users ──────────────────────────────────────────────────────────────
     op.create_table(
