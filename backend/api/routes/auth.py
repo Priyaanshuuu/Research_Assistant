@@ -14,7 +14,7 @@ from db.models import AuthProvider, User
 from api.middleware.__init__ import TokenPayload, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 class RegisterRequest(BaseModel):
     email: EmailStr
