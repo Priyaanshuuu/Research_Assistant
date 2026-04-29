@@ -1,123 +1,153 @@
 "use client";
 
-import { useState } from "react";
-import { FieldSet, FieldGroup, Field, FieldDescription } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { useState, useCallback } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export function RegisterForm() {
+export default function SignupPage() {
+  const router = useRouter();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError(null);
+      setLoading(true);
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
-        {
+      try {
+        // 1. Create user in FastAPI via the Next.js proxy route
+        const registerRes = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, name }),
+          body: JSON.stringify({ email, password, name: name || null }),
+        });
+
+        if (!registerRes.ok) {
+          const data = await registerRes.json();
+          setError(data.error ?? "Registration failed.");
+          console.log(data.error);
+          
+          return;
         }
-      );
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Registration failed");
+        // 2. Auto-login with the same credentials
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError("Account created but sign-in failed. Please log in manually.");
+          router.push("/login");
+        } else {
+          router.push("/dashboard");
+        }
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
       }
-
-      const data = await response.json();
-      localStorage.setItem("access_token", data.access_token);
-      setSuccess(true);
-      setEmail("");
-      setPassword("");
-      setName("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+    [name, email, password, router]
+  );
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Sign up to get started with Research Assistant</CardDescription>
-        </CardHeader>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-1">
+        <h1 className="text-2xl font-bold text-slate-900">Create an account</h1>
+        <p className="text-sm text-slate-500">Start researching in seconds</p>
+      </div>
 
-        <CardContent>
-          {success && (
-            <div className="bg-green-100 text-green-800 p-3 rounded text-sm mb-4">
-              Registration successful! ✓
-            </div>
-          )}
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+          {error}
+        </div>
+      )}
 
-          {error && (
-            <div className="bg-red-100 text-red-800 p-3 rounded text-sm mb-4">
-              {error}
-            </div>
-          )}
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1">
+          <label htmlFor="name" className="block text-sm font-medium text-slate-700">
+            Name <span className="text-slate-400 font-normal">(optional)</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                       focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent
+                       disabled:opacity-50"
+            disabled={loading}
+          />
+        </div>
 
-          <form onSubmit={handleSubmit}>
-            <FieldSet>
-              <FieldGroup>
-                <Field>
-                  <label htmlFor="email" className="text-sm font-medium">Email</label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                </Field>
+        <div className="space-y-1">
+          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                       focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent
+                       disabled:opacity-50"
+            disabled={loading}
+          />
+        </div>
 
-                <Field>
-                  <label htmlFor="password" className="text-sm font-medium">Password</label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                  <FieldDescription>At least 8 characters</FieldDescription>
-                </Field>
+        <div className="space-y-1">
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                       focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent
+                       disabled:opacity-50"
+            disabled={loading}
+          />
+          <p className="text-xs text-slate-400">Minimum 8 characters</p>
+        </div>
 
-                <Field>
-                  <label htmlFor="name" className="text-sm font-medium">Name (Optional)</label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={loading}
-                  />
-                </Field>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 px-4 bg-slate-900 text-white text-sm font-medium
+                     rounded-lg hover:bg-slate-700 transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Creating account…" : "Create account"}
+        </button>
+      </form>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Registering..." : "Register"}
-                </Button>
-              </FieldGroup>
-            </FieldSet>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Link to login */}
+      <p className="text-center text-sm text-slate-500">
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-slate-900 hover:underline">
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
