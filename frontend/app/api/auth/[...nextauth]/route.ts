@@ -1,4 +1,22 @@
-import { handlers } from "@/auth";
+import NextAuth from "next-auth"
+import type { NextAuthOptions } from "next-auth"
 
-export const GET = handlers.GET;
-export const POST = handlers.POST;
+export const authOptions: NextAuthOptions = {
+  providers:[
+
+  ],
+
+  session:{
+
+  },
+
+  pages:{
+
+  },
+
+  callbacks:{
+    
+  }
+}
+
+export default NextAuth(authOptions)
