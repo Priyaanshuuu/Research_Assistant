@@ -32,6 +32,7 @@ class OAuthUpsertRequest(BaseModel):
     name: str | None = None
     provider: str
     provider_id: str
+    image: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -39,7 +40,9 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
     user_id: str
     email: str
-    name: str | None
+    name: str | None = None
+    image: str | None = None
+    provider: str
 
 
 class MeResponse(BaseModel):
@@ -64,6 +67,8 @@ def _to_auth_response(user: User) -> AuthResponse:
         user_id=str(user.id),
         email=user.email,
         name=user.name,
+        image=user.image,
+        provider=user.provider.value,
     )
 
 
@@ -119,38 +124,99 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)) -> AuthRespons
         raise HTTPException(status_code=500, detail="Login failed")
 
 
-@router.post("/oauth/upsert", response_model=AuthResponse)
+@router.post("/oauth/upsert", response_model=AuthResponse, status_code=status.HTTP_200_OK)
 async def oauth_upsert(
     req: OAuthUpsertRequest, db: Session = Depends(get_db)
 ) -> AuthResponse:
-    """Called server-side by NextAuth after a successful OAuth flow.
-    Upserts the user record and returns our own JWT."""
+    """
+    Upsert OAuth user - called from frontend after successful OAuth flow.
+    
+    Supports: GitHub, Google
+    - Creates user on first login
+    - Updates user profile on subsequent logins
+    - Returns JWT token for subsequent API calls
+    """
     try:
-        user = db.query(User).filter(User.email == req.email).first()
-        if not user:
-            provider_enum = (
-                AuthProvider.GOOGLE if req.provider == "google" else AuthProvider.EMAIL
+        # Validate provider
+        valid_providers = ["github", "google"]
+        if req.provider not in valid_providers:
+            logger.warning("Invalid OAuth provider: {}", req.provider)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid provider. Must be one of: {', '.join(valid_providers)}"
             )
+        
+        # Validate email format
+        if not req.email or "@" not in req.email:
+            logger.warning("Invalid email format: {}", req.email)
+            raise HTTPException(status_code=400, detail="Invalid email format")
+        
+        # Validate provider_id
+        if not req.provider_id:
+            logger.warning("Missing provider_id for {}", req.provider)
+            raise HTTPException(status_code=400, detail="Missing provider_id")
+        
+        # Check if user exists by email
+        user = db.query(User).filter(User.email == req.email).first()
+        
+        if user:
+            # Update existing user
+            logger.info("OAuth user exists: {} via {}", user.email, req.provider)
+            
+            # Update profile info if provided
+            if req.name:
+                user.name = req.name
+            if req.image:
+                user.image = req.image
+            
+            # Update provider info if changed
+            if user.provider != AuthProvider[req.provider.upper()]:
+                user.provider = AuthProvider[req.provider.upper()]
+                user.provider_id = req.provider_id
+                logger.info("Updated provider for {}: {}", user.email, req.provider)
+            
+            # Mark email as verified (OAuth-verified emails are trusted)
+            if not user.email_verified:
+                user.email_verified = True
+            
+            user.updated_at = datetime.utcnow()
+        else:
+            # Create new user
+            logger.info("Creating new OAuth user: {} via {}", req.email, req.provider)
+            
+            try:
+                provider_enum = AuthProvider[req.provider.upper()]
+            except KeyError:
+                logger.error("Unknown provider: {}", req.provider)
+                raise HTTPException(status_code=400, detail="Invalid provider")
+            
             user = User(
                 id=uuid.uuid4(),
                 email=req.email,
                 name=req.name,
+                image=req.image,
                 provider=provider_enum,
                 provider_id=req.provider_id,
+                email_verified=True,  # OAuth providers verify emails
             )
             db.add(user)
-            db.commit()
-            db.refresh(user)
-            logger.info("OAuth user created: {}", user.email)
-        else:
-            logger.info("OAuth user found: {}", user.email)
-
+        
+        db.commit()
+        db.refresh(user)
+        logger.info("OAuth upsert successful: {} (ID: {})", user.email, user.id)
+        
         return _to_auth_response(user)
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as exc:
         db.rollback()
-        logger.error("OAuth upsert error: {}", exc)
-        raise HTTPException(status_code=500, detail="OAuth upsert failed")
+        logger.error("OAuth upsert error: {} - {}", type(exc).__name__, str(exc))
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to process OAuth login. Please try again."
+        )
 
 
 @router.get("/me", response_model=MeResponse)

@@ -67,11 +67,47 @@ export const authOptions: NextAuthOptions = {
       return `${baseUrl}/dashboard`;
     },
 
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       try {
         if (!user?.email) {
           return false;
         }
+
+        // For OAuth providers, save user to backend database
+        if (account?.provider) {
+          try {
+            console.log(
+              `OAuth signIn: ${account.provider} - ${user?.email}`
+            );
+
+            // Import function dynamically to avoid circular dependency
+            const { saveOAuthUserToDatabase } = await import("@/lib/auth");
+
+            const backendResult = await saveOAuthUserToDatabase({
+              id: account.providerAccountId,
+              name: user?.name,
+              email: user?.email,
+              image: user?.image,
+              provider: account.provider,
+            });
+
+            if (!backendResult) {
+              console.warn(
+                "User not persisted to database, but OAuth login allowed (graceful degradation)"
+              );
+            } else {
+              console.log("User successfully persisted to database");
+            }
+          } catch (err) {
+            console.error(
+              "Error saving user to database during OAuth signIn:",
+              err
+            );
+            // Graceful degradation: don't block OAuth login if database save fails
+            // User is still logged in via NextAuth even if backend persistence fails
+          }
+        }
+
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);

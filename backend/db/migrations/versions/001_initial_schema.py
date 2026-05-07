@@ -17,9 +17,30 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # ── Enums ─────────────────────────────────────────────────────────────
-    op.execute("CREATE TYPE IF NOT EXISTS authprovider AS ENUM ('email', 'google')")
-    op.execute("CREATE TYPE IF NOT EXISTS researchstatus AS ENUM ('pending', 'running', 'completed', 'failed')")
-    op.execute("CREATE TYPE IF NOT EXISTS messagerole AS ENUM ('user', 'assistant', 'system')")
+    # Create enum types with conditional logic
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE authprovider AS ENUM ('email', 'google');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE researchstatus AS ENUM ('pending', 'running', 'completed', 'failed');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE messagerole AS ENUM ('user', 'assistant', 'system');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
     # ── users ──────────────────────────────────────────────────────────────
     op.create_table(

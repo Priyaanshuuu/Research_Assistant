@@ -11,6 +11,7 @@ from db.database import Base
 class AuthProvider(str, enum.Enum):
     EMAIL = "email"
     GOOGLE = "google"
+    GITHUB = "github"
 
 
 class ResearchStatus(str, enum.Enum):
@@ -33,11 +34,13 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
+    image: Mapped[str | None] = mapped_column(Text, nullable=True)
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     provider: Mapped[AuthProvider] = mapped_column(
         SAEnum(AuthProvider), nullable=False, default=AuthProvider.EMAIL
     )
-    provider_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    provider_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
