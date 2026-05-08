@@ -5,25 +5,20 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { formatUserName, getInitials } from "@/lib/utils";
 
-/**
- * Dashboard page - protected route showing user information
- * Only accessible when user is authenticated
- */
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Redirect to signin if not authenticated
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
     }
   }, [status, router]);
 
-  // Show loading state
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 mx-auto animate-spin">
             <div className="w-full h-full border-4 border-gray-300 border-t-blue-600 rounded-full"></div>
@@ -34,7 +29,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Don't render if not authenticated
   if (status === "unauthenticated" || !session?.user) {
     return null;
   }
@@ -44,7 +38,7 @@ export default function DashboardPage() {
   const initials = getInitials(user.name);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -58,7 +52,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
           {/* Welcome Card */}
@@ -72,7 +65,7 @@ export default function DashboardPage() {
                   className="w-20 h-20 rounded-full border-4 border-blue-600 object-cover"
                 />
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center border-4 border-blue-600">
+                <div className="w-20 h-20 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center border-4 border-blue-600">
                   <span className="text-white text-2xl font-bold">{initials}</span>
                 </div>
               )}
@@ -84,7 +77,7 @@ export default function DashboardPage() {
                 Welcome, {displayName}!
               </h2>
               <p className="text-gray-600">
-                You're successfully authenticated to the Research Assistant
+                You are successfully authenticated to the Research Assistant
               </p>
             </div>
 
@@ -157,3 +150,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
