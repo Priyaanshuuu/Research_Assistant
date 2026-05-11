@@ -1,12 +1,57 @@
-"""
-Planner node — decomposes a research topic into sub-questions and search queries.
+# REPLACE THIS FILE — mock replaced with GPT-4o structured output
 
-Day 3: returns structured mock data with the correct shape.
-Day 4: replaces mock with GPT-4o structured output call.
-"""
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 from loguru import logger
+from pydantic import BaseModel, Field
 
 from agents.state import ResearchState
+from core.config import settings
+
+
+class PlannerOutput(BaseModel):
+    """Structured output schema enforced by GPT-4o."""
+
+    sub_questions: list[str] = Field(
+        description=(
+            "5-7 specific, non-overlapping sub-questions that together give "
+            "comprehensive coverage of the research topic"
+        ),
+        min_length=3,
+        max_length=8,
+    )
+    search_queries: list[str] = Field(
+        description=(
+            "One precise web search query per sub-question, "
+            "optimised for finding authoritative and recent sources"
+        ),
+        min_length=3,
+        max_length=8,
+    )
+    reasoning: str = Field(
+        description="One-sentence explanation of the decomposition strategy chosen"
+    )
+
+
+_PLANNER_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """You are an expert research strategist. Given a research topic:
+
+1. Break it into 5-7 specific, non-overlapping sub-questions that together \
+give complete coverage (definition, current state, challenges, applications, future).
+2. Write one precise search query per sub-question — include "2024" where recency matters, \
+prefer specific terms over broad ones.
+
+Rules:
+- Each sub-question must be independently answerable
+- Queries must be distinct — no overlapping intent
+- Avoid filler words in queries; be direct and keyword-rich""",
+        ),
+        ("human", "Research topic: {topic}"),
+    ]
+)
 
 
 async def planner_node(state: ResearchState) -> dict:
@@ -18,33 +63,26 @@ async def planner_node(state: ResearchState) -> dict:
     logger.info("[planner] Starting — topic: '{}'", topic)
 
     try:
-        # ── Day 4 replaces this block with a real GPT-4o call ─────────────
-        sub_questions = [
-            f"What are the core concepts behind {topic}?",
-            f"What is the current state of research on {topic}?",
-            f"What are the key challenges and limitations of {topic}?",
-            f"What are real-world applications of {topic}?",
-            f"What does the future outlook for {topic} look like?",
-        ]
+        llm = ChatOpenAI(
+            model="gpt-4o",
+            temperature=0.2,
+            openai_api_key=settings.OPENAI_API_KEY,
+        )
 
-        search_queries = [
-            f"{topic} overview 2024",
-            f"{topic} latest research findings",
-            f"{topic} challenges limitations",
-            f"{topic} real world applications",
-            f"{topic} future trends",
-        ]
-        # ──────────────────────────────────────────────────────────────────
+        chain = _PLANNER_PROMPT | llm.with_structured_output(PlannerOutput)
+
+        result: PlannerOutput = await chain.ainvoke({"topic": topic})
 
         logger.info(
-            "[planner] Generated {} sub-questions and {} search queries",
-            len(sub_questions),
-            len(search_queries),
+            "[planner] {} sub-questions | {} queries | strategy: {}",
+            len(result.sub_questions),
+            len(result.search_queries),
+            result.reasoning[:120],
         )
 
         return {
-            "sub_questions": sub_questions,
-            "search_queries": search_queries,
+            "sub_questions": result.sub_questions,
+            "search_queries": result.search_queries,
             "status": "searching",
         }
 

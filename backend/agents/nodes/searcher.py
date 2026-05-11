@@ -1,52 +1,71 @@
-"""
-Searcher node — executes web searches and returns raw results.
+# REPLACE THIS FILE — mock replaced with Tavily + Redis + Pinecone
 
-Day 3: returns mock search results with the correct shape.
-Day 4: replaces mock with real Tavily API calls + Redis caching + Pinecone storage.
-"""
-from datetime import date
 from loguru import logger
 
 from agents.state import ResearchState, SearchResult
+from services.pinecone_service import upsert_search_results
+from services.redis_service import get_cached_results, set_cached_results
+from tools.web_search import tavily_search
 
 
 async def searcher_node(state: ResearchState) -> dict:
     """
-    Input:  state["search_queries"], state["search_iterations"]
-    Output: raw_results (appended via reducer), status
+    Input:  state["search_queries"], state["search_iterations"], state["session_id"]
+    Output: raw_results (appended via operator.add reducer), status
+
+    Pipeline per query:
+        Redis cache hit  → use cached results (no Tavily call, no Pinecone upsert)
+        Redis cache miss → Tavily search → cache in Redis → embed + upsert to Pinecone
     """
-    queries = state["search_queries"]
-    iteration = state["search_iterations"]
+    queries: list[str] = state["search_queries"]
+    iteration: int = state["search_iterations"]
+    session_id: str = state["session_id"]
+
     logger.info(
-        "[searcher] Iteration {} — running {} queries", iteration + 1, len(queries)
+        "[searcher] Iteration {} — {} queries for session {}",
+        iteration + 1,
+        len(queries),
+        session_id[:8],
     )
 
     try:
-        # ── Day 4 replaces this block with Tavily + Redis + Pinecone ──────
-        today = str(date.today())
-        raw_results: list[SearchResult] = []
+        fresh_results: list[SearchResult] = []    # from Tavily — will go to Pinecone
+        cached_results: list[SearchResult] = []   # from Redis — skip Pinecone upsert
+        cache_hits = 0
 
-        for i, query in enumerate(queries):
-            raw_results.append(
-                SearchResult(
-                    query=query,
-                    url=f"https://example-source-{i + 1}.com/article",
-                    title=f"Research findings on: {query}",
-                    content=(
-                        f"This article covers {query} in depth. "
-                        "Studies indicate significant developments in this area, "
-                        "with researchers noting both promise and complexity. "
-                        "Key contributors include academic institutions and industry labs."
-                    ),
-                    published_date=today,
-                )
-            )
-        # ──────────────────────────────────────────────────────────────────
+        for query in queries:
+            # ── 1. Redis cache check ──────────────────────────────────────
+            cached = await get_cached_results(query)
 
-        logger.info("[searcher] Collected {} raw results", len(raw_results))
+            if cached is not None:
+                cache_hits += 1
+                cached_results.extend(cached)   # TypedDict == dict at runtime
+                continue
+
+            # ── 2. Cache miss → Tavily ────────────────────────────────────
+            results = await tavily_search(query, max_results=5)
+
+            if results:
+                # ── 3. Store in Redis (24-hour TTL) ───────────────────────
+                await set_cached_results(query, list(results))
+                fresh_results.extend(results)
+
+        # ── 4. Embed fresh results → Pinecone ────────────────────────────
+        if fresh_results:
+            upserted = await upsert_search_results(session_id, list(fresh_results))
+            logger.info("[searcher] Upserted {} vectors to Pinecone", upserted)
+
+        all_results = fresh_results + cached_results
+
+        logger.info(
+            "[searcher] {} total results | {} from Tavily | {} from cache",
+            len(all_results),
+            len(fresh_results),
+            cache_hits,
+        )
 
         return {
-            "raw_results": raw_results,   # operator.add reducer appends these
+            "raw_results": all_results,
             "status": "evaluating",
         }
 
