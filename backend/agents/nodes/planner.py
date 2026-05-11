@@ -1,5 +1,3 @@
-# REPLACE THIS FILE — mock replaced with GPT-4o structured output
-
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from loguru import logger

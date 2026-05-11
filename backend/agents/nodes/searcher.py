@@ -1,5 +1,3 @@
-# REPLACE THIS FILE — mock replaced with Tavily + Redis + Pinecone
-
 from loguru import logger
 
 from agents.state import ResearchState, SearchResult
@@ -29,8 +27,9 @@ async def searcher_node(state: ResearchState) -> dict:
     )
 
     try:
-        fresh_results: list[SearchResult] = []    # from Tavily — will go to Pinecone
-        cached_results: list[SearchResult] = []   # from Redis — skip Pinecone upsert
+        fresh_results: list[SearchResult] = []  
+        cached_results: list[SearchResult] = [] 
+        
         cache_hits = 0
 
         for query in queries:
@@ -39,7 +38,7 @@ async def searcher_node(state: ResearchState) -> dict:
 
             if cached is not None:
                 cache_hits += 1
-                cached_results.extend(cached)   # TypedDict == dict at runtime
+                cached_results.extend(cached)  
                 continue
 
             # ── 2. Cache miss → Tavily ────────────────────────────────────

@@ -1,7 +1,3 @@
-"""
-Full-page text fetcher for when Tavily snippets aren't enough.
-Used optionally by the Searcher to enrich thin results.
-"""
 import re
 from html.parser import HTMLParser
 

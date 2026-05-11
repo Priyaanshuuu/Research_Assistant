@@ -18,11 +18,6 @@ def _get_client() -> TavilyClient:
 
 
 async def tavily_search(query: str, max_results: int = 5) -> list[SearchResult]:
-    """
-    Searches the web via Tavily and returns structured SearchResult objects.
-    The Tavily client is synchronous — executed in a thread-pool executor
-    so it doesn't block the event loop.
-    """
     try:
         client = _get_client()
         loop = asyncio.get_event_loop()
