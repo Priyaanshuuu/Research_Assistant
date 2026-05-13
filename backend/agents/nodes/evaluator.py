@@ -1,5 +1,3 @@
-# REPLACE THIS FILE — mock scoring replaced with GPT-4o-mini + token budget guard
-
 import json
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -14,14 +12,9 @@ from core.config import settings
 MAX_ITERATIONS = 3
 QUALITY_THRESHOLD = 0.60
 
-# If accumulated content across all results exceeds this many tokens we stop
-# searching regardless of score — prevents runaway API costs
 TOKEN_BUDGET = 80_000
 
 _ENCODER = encoding_for_model("gpt-4o")
-
-
-# ── Token budget helper ───────────────────────────────────────────────────────
 
 def _count_tokens(texts: list[str]) -> int:
     return sum(len(_ENCODER.encode(t)) for t in texts if t)
@@ -37,10 +30,6 @@ def _budget_exceeded(state: ResearchState) -> bool:
             TOKEN_BUDGET,
         )
     return total >= TOKEN_BUDGET
-
-
-# ── Pydantic schema for GPT-4o-mini structured output ────────────────────────
-
 class ResultScore(BaseModel):
     credibility_score: float = Field(
         ge=0.0,
@@ -98,21 +87,16 @@ Results to score:
     ]
 )
 
-
-# ── Node ──────────────────────────────────────────────────────────────────────
-
 async def evaluator_node(state: ResearchState) -> dict:
     """
     Input:  state["raw_results"], state["search_iterations"], state["topic"]
     Output: evaluated_results (appended via reducer), needs_more_search,
             search_iterations (incremented), status
     """
-    # Only score results from this iteration (new ones appended by reducer)
-    # We track iteration count to slice only the latest batch
     iteration = state["search_iterations"]
     all_raw = state["raw_results"]
     results_per_iter = len(state["search_queries"])
-    latest_raw = all_raw[iteration * results_per_iter :]  # latest batch only
+    latest_raw = all_raw[iteration * results_per_iter :] 
 
     logger.info(
         "[evaluator] Scoring {} results (iteration {})",
@@ -121,7 +105,6 @@ async def evaluator_node(state: ResearchState) -> dict:
     )
 
     try:
-        # ── GPT-4o-mini batch scoring ─────────────────────────────────────
         llm = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.0,
@@ -136,7 +119,7 @@ async def evaluator_node(state: ResearchState) -> dict:
                 "query": r["query"],
                 "url": r["url"],
                 "title": r["title"],
-                "content": r["content"][:600],  # truncate to keep prompt small
+                "content": r["content"][:600], 
             }
             for i, r in enumerate(latest_raw)
         ]
@@ -147,8 +130,6 @@ async def evaluator_node(state: ResearchState) -> dict:
                 "results_json": json.dumps(results_for_prompt, indent=2),
             }
         )
-
-        # Pad scores if GPT returns fewer than expected
         while len(batch.scores) < len(latest_raw):
             batch.scores.append(
                 ResultScore(
@@ -178,8 +159,6 @@ async def evaluator_node(state: ResearchState) -> dict:
 
         avg_score = sum(r["combined_score"] for r in evaluated) / max(len(evaluated), 1)
         new_iteration = iteration + 1
-
-        # ── Routing decision ──────────────────────────────────────────────
         budget_hit = _budget_exceeded(state)
         needs_more = (
             avg_score < QUALITY_THRESHOLD

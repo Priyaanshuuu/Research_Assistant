@@ -1,5 +1,3 @@
-# REPLACE THIS FILE — adds key_takeaways to printed output
-
 import asyncio
 import json
 import sys
@@ -33,7 +31,7 @@ async def run(topic: str) -> None:
         "needs_more_search": False,
         "search_iterations": 0,
         "synthesis": "",
-        "report": {},           # type: ignore[typeddict-item]
+        "report": {},           
         "status": "pending",
         "error": None,
     }

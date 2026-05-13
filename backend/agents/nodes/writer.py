@@ -1,5 +1,3 @@
-# REPLACE THIS FILE — mock replaced with GPT-4o structured output
-
 from datetime import datetime, timezone
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,9 +7,6 @@ from pydantic import BaseModel, Field
 
 from agents.state import EvaluatedResult, ResearchReport, ResearchState
 from core.config import settings
-
-
-# ── Pydantic schemas for GPT-4o structured output ────────────────────────────
 
 class ReportSectionOutput(BaseModel):
     heading: str = Field(description="Clear, descriptive section heading")
@@ -124,8 +119,6 @@ async def writer_node(state: ResearchState) -> dict:
                 "sources_list": _format_sources_list(evaluated),
             }
         )
-
-        # ── Deduplicate and order all citations ───────────────────────────
         seen: set[str] = set()
         all_citations: list[str] = []
         for section in result.sections:
@@ -134,7 +127,6 @@ async def writer_node(state: ResearchState) -> dict:
                     seen.add(url)
                     all_citations.append(url)
 
-        # ── Build final ResearchReport TypedDict ──────────────────────────
         report = ResearchReport(
             title=result.title,
             summary=result.summary,
