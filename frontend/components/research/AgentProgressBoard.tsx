@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Progress } from "@/components/ui/progress";
 import { fetchStatus } from "@/lib/api";
-import type { ResearchStatus, StatusResponse } from "@/lib/api";
+import type { ResearchStatus } from "@/lib/types";
 import {
   CheckCircle2,
   Circle,
@@ -16,8 +16,6 @@ import {
   GitMerge,
   PenLine,
 } from "lucide-react";
-
-// ── Node definitions ──────────────────────────────────────────────────────────
 
 interface AgentNode {
   key: string;
@@ -80,8 +78,6 @@ function getNodeState(node: AgentNode, status: ResearchStatus): NodeState {
   return "idle";
 }
 
-// ── Node indicator ────────────────────────────────────────────────────────────
-
 function NodeIndicator({
   node,
   nodeState,
@@ -97,7 +93,7 @@ function NodeIndicator({
     <div className="flex items-start gap-3">
       {/* Icon bubble */}
       <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center
           transition-all duration-500
           ${isDone ? "bg-green-100 text-green-600" : ""}
           ${isActive ? "bg-violet-100 text-violet-600 ring-2 ring-violet-300 ring-offset-1" : ""}
@@ -110,8 +106,6 @@ function NodeIndicator({
         {isFailed && <XCircle className="w-4 h-4" />}
         {nodeState === "idle" && <Circle className="w-4 h-4" />}
       </div>
-
-      {/* Label + description */}
       <div className="pt-1 space-y-0.5">
         <p
           className={`text-sm font-medium transition-colors
@@ -128,8 +122,6 @@ function NodeIndicator({
     </div>
   );
 }
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 interface AgentProgressBoardProps {
   sessionId: string;
@@ -159,7 +151,6 @@ export function AgentProgressBoard({
       setStatusData(data);
 
       if (data.status === "completed") {
-        // Small delay so the user sees 100% before redirect
         setTimeout(() => router.refresh(), 1200);
       }
     } catch (err) {
@@ -171,10 +162,14 @@ export function AgentProgressBoard({
     const TERMINAL = ["completed", "failed"];
     if (TERMINAL.includes(statusData.status)) return;
 
-    poll(); // immediate first poll
+    // Delay initial poll to avoid cascading renders
+    const timeout = setTimeout(() => poll(), 0);
     const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
-  }, [statusData.status, poll]);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [poll, statusData.status]);
 
   const { status, progress_pct, latest_event, error_message } = statusData;
 
@@ -191,8 +186,6 @@ export function AgentProgressBoard({
           <p className="text-xs text-slate-400 pt-1">{latest_event}</p>
         )}
       </div>
-
-      {/* Nodes */}
       <div className="space-y-4">
         {NODES.map((node) => (
           <NodeIndicator
@@ -202,8 +195,6 @@ export function AgentProgressBoard({
           />
         ))}
       </div>
-
-      {/* Error state */}
       {status === "failed" && error_message && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
           <p className="font-medium mb-1">Research failed</p>

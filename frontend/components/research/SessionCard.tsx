@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatDistanceToNow } from "@/lib/date-utils";
+import { formatDistanceToNow } from "../../lib/data-utils"
 import { Badge } from "@/components/ui/badge";
 import type { ResearchSession, ResearchStatus } from "@/lib/types";
 

@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { ExternalLink, ChevronDown, ChevronUp, Lightbulb, BookOpen } from "lucide-react";
-import { formatDate } from "@/lib/date-utils";
+import { formatDate } from "../../lib/data-utils";
 import type { ResearchReport } from "@/lib/types";
-
-// ── Citation link ─────────────────────────────────────────────────────────────
 
 function CitationLink({ url, index }: { url: string; index: number }) {
   let hostname = url;
@@ -14,7 +12,7 @@ function CitationLink({ url, index }: { url: string; index: number }) {
   } catch {}
 
   return (
-    
+    <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
@@ -27,8 +25,6 @@ function CitationLink({ url, index }: { url: string; index: number }) {
     </a>
   );
 }
-
-// ── Section ───────────────────────────────────────────────────────────────────
 
 function ReportSection({
   section,
@@ -63,15 +59,11 @@ function ReportSection({
           <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
         )}
       </button>
-
-      {/* Section body */}
       {expanded && (
         <div className="px-5 py-4 space-y-4 bg-white">
           <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
             {section.body}
           </p>
-
-          {/* Inline citations */}
           {section.citations.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {section.citations.map((url) => {
@@ -86,8 +78,6 @@ function ReportSection({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 interface ReportViewerProps {
   report: ResearchReport;
 }
@@ -100,14 +90,11 @@ export function ReportViewer({ report }: ReportViewerProps) {
 
   return (
     <div className="space-y-8">
-      {/* Report header */}
       <div className="space-y-3">
         <h1 className="text-2xl font-bold text-slate-900">{report.title}</h1>
         <p className="text-xs text-slate-400">
           Generated {formatDate(report.generated_at)}
         </p>
-
-        {/* Summary */}
         <div className="bg-violet-50 border border-violet-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="w-4 h-4 text-violet-600" />
@@ -118,8 +105,6 @@ export function ReportViewer({ report }: ReportViewerProps) {
           <p className="text-sm text-violet-900 leading-relaxed">{report.summary}</p>
         </div>
       </div>
-
-      {/* Key takeaways */}
       {report.key_takeaways?.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -138,8 +123,6 @@ export function ReportViewer({ report }: ReportViewerProps) {
           </ul>
         </div>
       )}
-
-      {/* Sections */}
       <div className="space-y-4">
         <h2 className="text-base font-semibold text-slate-900">Report Sections</h2>
         {report.sections.map((section, i) => (
@@ -151,8 +134,6 @@ export function ReportViewer({ report }: ReportViewerProps) {
           />
         ))}
       </div>
-
-      {/* All citations */}
       {report.all_citations.length > 0 && (
         <div className="border border-slate-200 rounded-xl p-5 space-y-3">
           <h2 className="text-sm font-semibold text-slate-900">
@@ -160,20 +141,20 @@ export function ReportViewer({ report }: ReportViewerProps) {
           </h2>
           <ol className="space-y-1.5">
             {visibleCitations.map((url, i) => (
-              <li key={url} className="flex items-start gap-2">
-                <span className="text-xs text-slate-400 mt-0.5 w-5 flex-shrink-0">
-                  {i + 1}.
-                </span>
-                
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-violet-600 hover:underline break-all"
-                >
-                  {url}
-                </a>
-              </li>
-            ))}
+  <li key={url} className="flex items-start gap-2">
+    <span className="text-xs text-slate-400 mt-0.5 w-5 flex-shrink-0">
+      {i + 1}.
+    </span>
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-xs text-violet-600 hover:underline break-all"
+    >
+      {url}
+    </a>
+  </li>
+))}
           </ol>
 
           {report.all_citations.length > 6 && (

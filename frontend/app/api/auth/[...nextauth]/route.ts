@@ -52,6 +52,10 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         //session.user.image = token.picture as string | null;
       }
+      // Expose accessToken from JWT to session
+      if (token.accessToken) {
+        session.accessToken = token.accessToken;
+      }
       return session;
     },
     async redirect({ url, baseUrl }) {

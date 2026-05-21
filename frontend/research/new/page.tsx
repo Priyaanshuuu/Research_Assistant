@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { AppLayout } from "../../components/layout/AppLayout";
 import { ResearchForm } from "@/components/research/ResearchForm";
 
 export default async function NewResearchPage() {

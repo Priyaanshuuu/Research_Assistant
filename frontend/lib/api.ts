@@ -1,15 +1,7 @@
-// REPLACE THIS FILE — adds typed research + chat helpers on top of the axios instance
-
 import axios from "axios";
 import { getSession } from "next-auth/react";
-import type {
-  ResearchSession,
-  AgentEvent,
-  ChatMessage,
-  ResearchStatus,
-} from "@/lib/types";
+import type { ResearchSession , AgentEvent , ChatMessage , ResearchStatus } from "./types";
 
-// ── Axios instance ────────────────────────────────────────────────────────────
 
 const api = axios.create({
   baseURL: "/api/backend",
@@ -39,8 +31,6 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-// ── Research helpers ──────────────────────────────────────────────────────────
 
 export interface StartResearchResponse {
   session_id: string;
