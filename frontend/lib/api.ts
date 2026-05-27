@@ -1,7 +1,10 @@
+// REPLACE THIS FILE — adds chat history fetch helper
+
 import axios from "axios";
 import { getSession } from "next-auth/react";
-import type { ResearchSession , AgentEvent , ChatMessage , ResearchStatus } from "./types";
+import type { ResearchSession, ChatMessage, ResearchStatus } from "@/lib/types";
 
+// ── Axios instance ────────────────────────────────────────────────────────────
 
 const api = axios.create({
   baseURL: "/api/backend",
@@ -32,6 +35,8 @@ api.interceptors.response.use(
 
 export default api;
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 export interface StartResearchResponse {
   session_id: string;
   status: string;
@@ -45,6 +50,8 @@ export interface StatusResponse {
   latest_event: string | null;
   error_message: string | null;
 }
+
+// ── Research helpers ──────────────────────────────────────────────────────────
 
 export async function startResearch(topic: string): Promise<StartResearchResponse> {
   const { data } = await api.post<StartResearchResponse>("/research/start", { topic });
@@ -70,10 +77,20 @@ export async function deleteSession(sessionId: string): Promise<void> {
   await api.delete(`/research/${sessionId}`);
 }
 
+// ── Chat helpers ──────────────────────────────────────────────────────────────
+
 export async function sendChatMessage(
   sessionId: string,
   message: string
 ): Promise<{ user_message: ChatMessage; assistant_message: ChatMessage }> {
-  const { data } = await api.post("/chat/", { session_id: sessionId, message });
+  const { data } = await api.post("/chat/", {
+    session_id: sessionId,
+    message,
+  });
+  return data;
+}
+
+export async function fetchChatHistory(sessionId: string): Promise<ChatMessage[]> {
+  const { data } = await api.get<ChatMessage[]>(`/chat/history/${sessionId}`);
   return data;
 }

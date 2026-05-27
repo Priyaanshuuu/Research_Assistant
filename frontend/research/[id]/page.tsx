@@ -1,8 +1,11 @@
+// REPLACE THIS FILE — adds ChatInterface panel next to report
+
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AgentProgressBoard } from "@/components/research/AgentProgressBoard";
 import { ReportViewer } from "@/components/research/ReportViewer";
+import { ChatInterface } from "@/components/chat/ChatInterface";
 import type { ResearchSession } from "@/lib/types";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8000";
@@ -14,7 +17,6 @@ async function getSession(
   try {
     const res = await fetch(`${BACKEND}/research/${sessionId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
-      // Don't cache — page must always reflect live DB state
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -37,8 +39,10 @@ export default async function ResearchSessionPage({
   if (!researchSession) {
     return (
       <AppLayout>
-        <div className="max-w-2xl mx-auto text-center py-16 space-y-3">
-          <p className="text-slate-500">Session not found or you don&apos;t have access.</p>
+        <div className="max-w-2xl mx-auto text-center py-16">
+          <p className="text-slate-500">
+            Session not found or you don&apos;t have access.
+          </p>
         </div>
       </AppLayout>
     );
@@ -61,6 +65,7 @@ export default async function ResearchSessionPage({
           </h1>
         </div>
 
+        {/* Running — show progress board centred */}
         {isRunning && (
           <div className="max-w-md">
             <AgentProgressBoard
@@ -70,16 +75,31 @@ export default async function ResearchSessionPage({
           </div>
         )}
 
-        {isCompleted && researchSession.report_json && (
-          <ReportViewer report={researchSession.report_json} />
-        )}
-
+        {/* Failed */}
         {isFailed && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 space-y-2">
             <p className="font-semibold text-red-800">Research Failed</p>
             <p className="text-sm text-red-700">
               {researchSession.error_message ?? "An unknown error occurred."}
             </p>
+          </div>
+        )}
+
+        {/* Completed — report + chat side by side */}
+        {isCompleted && researchSession.report_json && (
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            {/* Report — takes 60% on large screens */}
+            <div className="w-full lg:w-[60%]">
+              <ReportViewer report={researchSession.report_json} />
+            </div>
+
+            {/* Chat — sticky sidebar on large screens */}
+            <div className="w-full lg:w-[40%] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
+              <ChatInterface
+                sessionId={researchSession.id}
+                topic={researchSession.topic}
+              />
+            </div>
           </div>
         )}
       </div>
