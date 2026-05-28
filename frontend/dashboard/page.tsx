@@ -25,10 +25,10 @@ async function getSessions(accessToken: string): Promise<ResearchSession[]> {
 }
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+const session = await auth();
+if (!session?.user || !session.accessToken) redirect("/login");
 
-  const sessions = await getSessions(session.accessToken);
+const sessions = await getSessions(session.accessToken);
 
   const running = sessions.filter((s) =>
     ["pending", "searching", "evaluating", "synthesizing", "writing"].includes(
@@ -41,7 +41,6 @@ export default async function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
@@ -59,8 +58,6 @@ export default async function DashboardPage() {
             </Button>
           </Link>
         </div>
-
-        {/* Stats row */}
         {sessions.length > 0 && (
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -79,8 +76,6 @@ export default async function DashboardPage() {
             ))}
           </div>
         )}
-
-        {/* Empty state */}
         {sessions.length === 0 && (
           <div className="text-center py-24 space-y-5">
             <div
@@ -106,8 +101,6 @@ export default async function DashboardPage() {
             </Link>
           </div>
         )}
-
-        {/* In Progress */}
         {running.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -121,7 +114,6 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Completed */}
         {completed.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -135,7 +127,6 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Failed */}
         {failed.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">

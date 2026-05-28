@@ -1,5 +1,3 @@
-// REPLACE THIS FILE — adds delete button with toast confirmation
-
 "use client";
 
 import Link from "next/link";
@@ -67,7 +65,6 @@ export function SessionCard({ session }: SessionCardProps) {
         ${isClickable ? "cursor-pointer" : "cursor-default"}
         ${deleting ? "opacity-50 pointer-events-none" : ""}`}
     >
-      {/* Delete button — appears on hover */}
       <button
         type="button"
         onClick={handleDelete}
@@ -83,8 +80,6 @@ export function SessionCard({ session }: SessionCardProps) {
           <Trash2 className="w-3.5 h-3.5" />
         )}
       </button>
-
-      {/* Status badge + time */}
       <div className="flex items-center justify-between pr-6">
         <span
           className={`inline-flex items-center gap-1.5 text-xs font-medium
@@ -100,19 +95,15 @@ export function SessionCard({ session }: SessionCardProps) {
         </span>
       </div>
 
-      {/* Topic */}
       <p className="text-sm font-medium text-slate-900 line-clamp-2 pr-2">
         {session.topic}
       </p>
 
-      {/* Report title */}
       {session.report_json?.title && (
         <p className="text-xs text-slate-500 line-clamp-1 italic">
           {session.report_json.title}
         </p>
       )}
-
-      {/* Error */}
       {session.error_message && (
         <p className="text-xs text-red-500 line-clamp-1">
           {session.error_message}

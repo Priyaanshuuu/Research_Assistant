@@ -1,5 +1,3 @@
-// REPLACE THIS FILE — adds export toolbar with PDF + Markdown download
-
 "use client";
 
 import { useState, useCallback } from "react";
