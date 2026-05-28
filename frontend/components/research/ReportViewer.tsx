@@ -19,8 +19,6 @@ import { formatDate } from "@/lib/date-utils";
 import api from "@/lib/api";
 import type { ResearchReport } from "@/lib/types";
 
-// ── Export helpers ────────────────────────────────────────────────────────────
-
 async function downloadFile(
   sessionId: string,
   format: "pdf" | "markdown"
@@ -42,7 +40,6 @@ async function downloadFile(
   URL.revokeObjectURL(url);
 }
 
-// ── Export toolbar ────────────────────────────────────────────────────────────
 
 function ExportToolbar({ sessionId }: { sessionId: string }) {
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -104,8 +101,6 @@ function ExportToolbar({ sessionId }: { sessionId: string }) {
   );
 }
 
-// ── Citation link ─────────────────────────────────────────────────────────────
-
 function CitationLink({ url, index }: { url: string; index: number }) {
   let hostname = url;
   try {
@@ -113,7 +108,7 @@ function CitationLink({ url, index }: { url: string; index: number }) {
   } catch {}
 
   return (
-    
+    <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
@@ -126,8 +121,6 @@ function CitationLink({ url, index }: { url: string; index: number }) {
     </a>
   );
 }
-
-// ── Section ───────────────────────────────────────────────────────────────────
 
 function ReportSection({
   section,
@@ -150,7 +143,7 @@ function ReportSection({
       >
         <div className="flex items-center gap-3">
           <span
-            className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100
+            className="shrink-0 w-6 h-6 rounded-full bg-violet-100
                        text-violet-700 text-xs font-semibold
                        flex items-center justify-center"
           >
@@ -161,9 +154,9 @@ function ReportSection({
           </h3>
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
         )}
       </button>
 
@@ -186,7 +179,6 @@ function ReportSection({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
 
 interface ReportViewerProps {
   report: ResearchReport;
@@ -214,8 +206,6 @@ export function ReportViewer({ report, sessionId }: ReportViewerProps) {
           </div>
           <ExportToolbar sessionId={sessionId} />
         </div>
-
-        {/* Executive summary */}
         <div className="bg-violet-50 border border-violet-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="w-4 h-4 text-violet-600" />
@@ -228,8 +218,6 @@ export function ReportViewer({ report, sessionId }: ReportViewerProps) {
           </p>
         </div>
       </div>
-
-      {/* Key takeaways */}
       {report.key_takeaways?.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -244,7 +232,7 @@ export function ReportViewer({ report, sessionId }: ReportViewerProps) {
                 key={i}
                 className="flex items-start gap-2 text-sm text-amber-900"
               >
-                <span className="flex-shrink-0 text-amber-500 font-bold mt-0.5">
+                <span className="shrink-0 text-amber-500 font-bold mt-0.5">
                   {i + 1}.
                 </span>
                 {t}
@@ -253,8 +241,6 @@ export function ReportViewer({ report, sessionId }: ReportViewerProps) {
           </ul>
         </div>
       )}
-
-      {/* Sections */}
       <div className="space-y-4">
         <h2 className="text-base font-semibold text-slate-900">
           Report Sections
@@ -268,8 +254,6 @@ export function ReportViewer({ report, sessionId }: ReportViewerProps) {
           />
         ))}
       </div>
-
-      {/* All citations */}
       {report.all_citations.length > 0 && (
         <div className="border border-slate-200 rounded-xl p-5 space-y-3">
           <h2 className="text-sm font-semibold text-slate-900">
@@ -278,10 +262,10 @@ export function ReportViewer({ report, sessionId }: ReportViewerProps) {
           <ol className="space-y-1.5">
             {visibleCitations.map((url, i) => (
               <li key={url} className="flex items-start gap-2">
-                <span className="text-xs text-slate-400 mt-0.5 w-5 flex-shrink-0">
+                <span className="text-xs text-slate-400 mt-0.5 w-5 shrink-0">
                   {i + 1}.
                 </span>
-                
+                <a
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
