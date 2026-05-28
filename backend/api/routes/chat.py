@@ -1,15 +1,13 @@
-# REPLACE THIS FILE — 501 stub replaced with full RAG implementation
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 from sqlalchemy.orm import Session
 
 from api.middleware.auth import TokenPayload, get_current_user
-from api.schemas import ChatMessageOut, ChatRequest, ChatResponse
+from api.schema import ChatMessageOut, ChatRequest, ChatResponse
 from db.database import get_db
 from db.models import ChatMessage
 from services import research_service
-from services.rag_service import answer_question, get_chat_history
+from services.rag_services import answer_question, get_chat_history
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

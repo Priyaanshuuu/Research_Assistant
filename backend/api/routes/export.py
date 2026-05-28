@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from api.middleware.auth import TokenPayload, get_current_user
 from db.database import get_db
 from services import research_service
-from services.export_service import generate_markdown, generate_pdf
+from services.export_services import generate_markdown, generate_pdf
 
 router = APIRouter(prefix="/export", tags=["export"])
 
