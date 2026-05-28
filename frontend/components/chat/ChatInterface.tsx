@@ -13,16 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { sendChatMessage, fetchChatHistory } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
 
-// ── Message bubble ────────────────────────────────────────────────────────────
-
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-      {/* Avatar */}
       <div
-        className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center
+        className={`shrink-0 w-7 h-7 rounded-full flex items-center
           justify-center mt-0.5
           ${isUser ? "bg-slate-900" : "bg-violet-100"}`}
       >
@@ -32,8 +29,6 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <Bot className="w-3.5 h-3.5 text-violet-600" />
         )}
       </div>
-
-      {/* Bubble */}
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed
           ${isUser
@@ -47,12 +42,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-// ── Typing indicator ──────────────────────────────────────────────────────────
-
 function TypingIndicator() {
   return (
     <div className="flex gap-3">
-      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-violet-100 flex
+      <div className="shrink-0w-7 h-7 rounded-full bg-violet-100 flex
                       items-center justify-center mt-0.5">
         <Bot className="w-3.5 h-3.5 text-violet-600" />
       </div>
@@ -71,16 +64,12 @@ function TypingIndicator() {
   );
 }
 
-// ── Suggested questions ───────────────────────────────────────────────────────
-
 const SUGGESTED: string[] = [
   "What were the most important findings?",
   "What are the main challenges in this area?",
   "What does the future outlook look like?",
   "Can you summarise the key applications?",
 ];
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -96,7 +85,6 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Load existing history on mount ────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       try {
@@ -111,12 +99,10 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
     load();
   }, [sessionId]);
 
-  // ── Auto-scroll to latest message ─────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // ── Send ──────────────────────────────────────────────────────────────────
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -125,8 +111,6 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
       setInput("");
       setError(null);
       setLoading(true);
-
-      // Optimistic user message
       const optimisticUser: ChatMessage = {
         id: `optimistic-${Date.now()}`,
         session_id: sessionId,
@@ -141,8 +125,6 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
           sessionId,
           trimmed
         );
-
-        // Replace optimistic message with real one from server
         setMessages((prev) => [
           ...prev.filter((m) => m.id !== optimisticUser.id),
           user_message,
@@ -155,7 +137,7 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
         const msg =
           err instanceof Error ? err.message : "Failed to send message.";
         setError(msg);
-        setInput(trimmed); // restore input so user doesn't lose their question
+        setInput(trimmed);
       } finally {
         setLoading(false);
         textareaRef.current?.focus();
@@ -183,20 +165,15 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
         <MessageSquare className="w-4 h-4 text-violet-600" />
         <div>
           <p className="text-sm font-semibold text-slate-900">Ask the Research</p>
-          <p className="text-xs text-slate-400 truncate max-w-[220px]">{topic}</p>
+          <p className="text-xs text-slate-400 truncate max-w-55">{topic}</p>
         </div>
       </div>
-
-      {/* Message list */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-        {/* Loading history */}
         {historyLoading && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
           </div>
         )}
-
-        {/* Empty state */}
         {isEmpty && (
           <div className="space-y-4">
             <div className="text-center py-4 space-y-2">
@@ -211,8 +188,6 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
                 I have access to all the sources used in this report
               </p>
             </div>
-
-            {/* Suggested questions */}
             <div className="space-y-2">
               {SUGGESTED.map((q) => (
                 <button
@@ -230,28 +205,21 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
             </div>
           </div>
         )}
-
-        {/* Messages */}
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} />
         ))}
-
-        {/* Typing indicator */}
         {loading && <TypingIndicator />}
 
-        {/* Error */}
         {error && (
           <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50
                           border border-red-200 rounded-lg px-3 py-2">
-            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             {error}
           </div>
         )}
 
         <div ref={bottomRef} />
       </div>
-
-      {/* Input */}
       <div className="px-4 py-3 border-t border-slate-200 bg-white">
         <div className="flex gap-2 items-end">
           <Textarea
@@ -262,7 +230,7 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={loading}
-            className="resize-none text-sm min-h-[38px] max-h-[120px]
+            className="resize-none text-sm min-h-9.5] max-h-30
                        overflow-y-auto flex-1"
           />
           <Button
@@ -270,7 +238,7 @@ export function ChatInterface({ sessionId, topic }: ChatInterfaceProps) {
             size="sm"
             disabled={loading || !input.trim()}
             onClick={() => send(input)}
-            className="flex-shrink-0 h-[38px] w-[38px] p-0"
+            className="shrink-0 h-9.5 w-9.5 p-0"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

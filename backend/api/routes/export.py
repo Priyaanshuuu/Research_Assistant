@@ -1,5 +1,3 @@
-# REPLACE THIS FILE — stub replaced with real PDF and Markdown export
-
 import re
 from datetime import datetime, timezone
 
