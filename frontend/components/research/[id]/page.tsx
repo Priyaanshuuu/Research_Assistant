@@ -32,9 +32,9 @@ export default async function ResearchSessionPage({
   params: { id: string };
 }) {
   const authSession = await auth();
-  if (!authSession?.user) redirect("/login");
+if (!authSession?.user || !authSession.accessToken) redirect("/login");
 
-  const researchSession = await getSession(params.id, authSession.accessToken);
+const researchSession = await getSession(params.id, authSession.accessToken);
 
   if (!researchSession) {
     return (
@@ -60,7 +60,6 @@ export default async function ResearchSessionPage({
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Topic heading */}
         <div className="space-y-1">
           <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
             Research Topic
@@ -69,8 +68,6 @@ export default async function ResearchSessionPage({
             {researchSession.topic}
           </h1>
         </div>
-
-        {/* Running */}
         {isRunning && (
           <div className="max-w-md">
             <AgentProgressBoard
@@ -79,8 +76,6 @@ export default async function ResearchSessionPage({
             />
           </div>
         )}
-
-        {/* Failed */}
         {isFailed && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 space-y-3">
             <div className="flex items-center gap-2">
@@ -90,7 +85,7 @@ export default async function ResearchSessionPage({
             <p className="text-sm text-red-700">
               {researchSession.error_message ?? "An unknown error occurred."}
             </p>
-            
+            <a
               href="/research/new"
               className="inline-block text-sm font-medium text-red-700
                          underline hover:no-underline"
@@ -99,8 +94,6 @@ export default async function ResearchSessionPage({
             </a>
           </div>
         )}
-
-        {/* Completed — report + chat */}
         {isCompleted && researchSession.report_json && (
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <div className="w-full lg:w-[60%]">
