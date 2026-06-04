@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from agents.graph import get_research_graph
 from agents.state import ResearchState
 from api.middleware.auth import TokenPayload, get_current_user
-from api.schemas import (
+from api.schema import (
     ResearchSessionOut,
     ResearchStatusResponse,
     StartResearchRequest,

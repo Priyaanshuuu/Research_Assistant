@@ -3,6 +3,26 @@
  */
 
 import type { DefaultSession, DefaultUser } from "next-auth";
+import NextAuth from "next-auth";
+
+declare module "next-auth" {
+  interface User {
+    backendAccessToken?: string;
+  }
+
+  interface Session {
+    accessToken?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    backendAccessToken?: string;
+    provider?: string;
+  }
+}
+
+export default NextAuth;
 
 declare module "next-auth" {
   interface Session extends DefaultSession {

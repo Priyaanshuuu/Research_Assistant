@@ -28,14 +28,16 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, account, profile }) {
+    async jwt({ token, user, account }) {
+      if (user?.backendAccessToken) {
+        token.backendAccessToken = user.backendAccessToken;
+      }
       if (account) {
         token.provider = account.provider;
-        token.accessToken = account.access_token;
       }
-      if (profile) {
-        token.name = profile.name;
-        token.email = profile.email;
+      if (user) {
+        token.name = user.name;
+        token.email = user.email;
       }
       return token;
     },
@@ -47,44 +49,23 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub;
-        session.user.provider = token.provider;
         session.user.name = token.name;
         session.user.email = token.email;
-        //session.user.image = token.picture as string | null;
       }
-      // Expose accessToken from JWT to session
-      if (token.accessToken) {
-        session.accessToken = token.accessToken;
-      }
+      session.accessToken = token.backendAccessToken;
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      // Allow relative URLs
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
-      }
-      // Allow same origin URLs
-      if (new URL(url).origin === baseUrl) {
-        return url;
-      }
-      // Default redirect to dashboard after sign in
+    async redirect({ baseUrl }) {
+      // Always redirect to dashboard after sign in
       return `${baseUrl}/dashboard`;
     },
 
     async signIn({ user, account }) {
       try {
-        if (!user?.email) {
-          return false;
-        }
+        if (!user?.email) return false;
 
-        // For OAuth providers, save user to backend database
         if (account?.provider) {
           try {
-            console.log(
-              `OAuth signIn: ${account.provider} - ${user?.email}`
-            );
-
-            // Import function dynamically to avoid circular dependency
             const { saveOAuthUserToDatabase } = await import("@/lib/auth");
 
             const backendResult = await saveOAuthUserToDatabase({
@@ -95,23 +76,20 @@ export const authOptions: NextAuthOptions = {
               provider: account.provider,
             });
 
-            if (!backendResult) {
+            if (backendResult?.access_token) {
+              // Store backend JWT in user object so it goes into token
+              user.backendAccessToken = backendResult.access_token;
+              console.log("User successfully persisted to database");
+            } else {
               console.warn(
                 "User not persisted to database, but OAuth login allowed (graceful degradation)"
               );
-            } else {
-              console.log("User successfully persisted to database");
             }
           } catch (err) {
-            console.error(
-              "Error saving user to database during OAuth signIn:",
-              err
-            );
+            console.error("Error saving user to database:", err);
             // Graceful degradation: don't block OAuth login if database save fails
-            // User is still logged in via NextAuth even if backend persistence fails
           }
         }
-
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);
